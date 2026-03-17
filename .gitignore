@@ -1,6 +1,7 @@
 .DS_Store
 .env
 .env.*
+!.env.example
 config.php
 install/install.lock
 *.log
