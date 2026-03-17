@@ -1,0 +1,54 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: epay_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${EPAY_MYSQL_ROOT_PASSWORD:?set EPAY_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${EPAY_DB_NAME:-epay}
+      MYSQL_USER: ${EPAY_DB_USER:?set EPAY_DB_USER}
+      MYSQL_PASSWORD: ${EPAY_DB_PASSWORD:?set EPAY_DB_PASSWORD}
+    volumes:
+      - epay_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u\"$${EPAY_DB_USER}\" -p\"$${EPAY_DB_PASSWORD}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        http_proxy: ${http_proxy-}
+        https_proxy: ${https_proxy-}
+        no_proxy: ${no_proxy-}
+        HTTP_PROXY: ${HTTP_PROXY-}
+        HTTPS_PROXY: ${HTTPS_PROXY-}
+        NO_PROXY: ${NO_PROXY-}
+    container_name: epay_app
+    restart: unless-stopped
+    ports:
+      # 默认使用 9099，避免占用宿主机 80 端口
+      - "9099:80"
+      # 如需直接用 http://localhost/ 访问，可取消注释下一行（确保宿主机 80 未被占用）
+      # - "80:80"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${EPAY_DB_USER:?set EPAY_DB_USER}
+      DB_PASS: ${EPAY_DB_PASSWORD:?set EPAY_DB_PASSWORD}
+      DB_NAME: ${EPAY_DB_NAME:-epay}
+      DB_PREFIX: ${EPAY_DB_PREFIX:-pay}
+    volumes:
+      - epay_uploads:/var/www/html/assets/upload
+      - epay_plugins:/var/www/html/plugins
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  epay_mysql_data:
+  epay_uploads:
+  epay_plugins:
