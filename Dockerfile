@@ -64,7 +64,9 @@ COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
     && chmod -R 777 /var/www/html/assets \
-    && chmod -R 777 /var/www/html/plugins
+    && chmod -R 777 /var/www/html/plugins \
+    && mkdir -p /opt/epay_plugins_template \
+    && cp -a /var/www/html/plugins/. /opt/epay_plugins_template/
 
 WORKDIR /var/www/html
 

@@ -14,6 +14,15 @@ until mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" -e "SELECT 1" > 
 done
 echo "[Epay] MySQL is ready."
 
+# 如果 /var/www/html/plugins 被 compose volume 覆盖，则用镜像内模板补全缺失插件文件
+if [ -d /opt/epay_plugins_template ]; then
+    mkdir -p /var/www/html/plugins
+    if [ ! -f /var/www/html/plugins/alipayd/inc/config.php ]; then
+        echo "[Epay] Seeding plugins volume from bundled template..."
+        cp -a /opt/epay_plugins_template/. /var/www/html/plugins/
+    fi
+    chown -R www-data:www-data /var/www/html/plugins || true
+fi
 	# 写入 config.php
 	cat > /var/www/html/config.php <<EOF
 <?php
